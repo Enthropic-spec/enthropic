@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enthropic</title>
+  <meta name="description" content="A declarative format for architectural contracts. Write it once. Every AI session reads it first.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:     #0f0f1a;
+      --pink:   #ffafff;
+      --dim:    rgba(255,175,255,0.4);
+      --dimmer: rgba(255,175,255,0.15);
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--pink);
+      font-family: 'Space Mono', 'Courier New', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .ascii {
+      font-size: clamp(5.5px, 1.35vw, 13px);
+      line-height: 1.45;
+      white-space: pre;
+      color: var(--pink);
+      margin-bottom: 2.2rem;
+      user-select: none;
+    }
+
+    .version {
+      font-size: 11px;
+      color: var(--dim);
+      letter-spacing: 0.12em;
+      margin-bottom: 2.2rem;
+      min-height: 1em;
+    }
+
+    .tagline {
+      font-size: clamp(12px, 1.6vw, 15px);
+      color: var(--pink);
+      opacity: 0.8;
+      max-width: 480px;
+      line-height: 1.85;
+      margin-bottom: 2.8rem;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 0.9rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 0.55rem 1.5rem;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-decoration: none;
+      border-radius: 4px;
+      transition: opacity 0.15s;
+    }
+
+    .btn:hover { opacity: 0.7; }
+
+    .btn-spec {
+      background: var(--pink);
+      color: var(--bg);
+    }
+
+    .btn-tool {
+      background: transparent;
+      color: var(--pink);
+      border: 1px solid rgba(255,175,255,0.25);
+    }
+
+    footer {
+      position: fixed;
+      bottom: 1.4rem;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      gap: 1.8rem;
+      font-size: 11px;
+    }
+
+    footer a {
+      color: var(--dimmer);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    footer a:hover { color: var(--dim); }
+  </style>
+</head>
+<body>
+
+  <pre class="ascii">              __  __                     _
+  ___  ____  / /_/ /_  _________  ____  (_)____
+ / _ \/ __ \/ __/ __ \/ ___/ __ \/ __ \/ / ___/
+/  __/ / / / /_/ / / / /  / /_/ / /_/ / / /__
+\___/_/ /_/\__/_/ /_/_/   \____/ .___/_/\___/
+                              /_/</pre>
+
+  <div class="version" id="version"></div>
+
+  <p class="tagline">
+    A declarative format for architectural contracts.<br>
+    Write it once. Every AI session reads it first.
+  </p>
+
+  <div class="buttons">
+    <a href="https://github.com/Enthropic-spec/enthropic/blob/main/SPEC.md" class="btn btn-spec">read the spec</a>
+    <a href="https://github.com/Enthropic-spec/enthropic-tools" class="btn btn-tool">cli tool</a>
+  </div>
+
+  <footer>
+    <a href="https://github.com/Enthropic-spec" target="_blank">github.com/Enthropic-spec</a>
+    <a href="https://github.com/Enthropic-spec/enthropic/blob/main/LICENSE" target="_blank">MIT</a>
+  </footer>
+
+  <script>
+    fetch('https://raw.githubusercontent.com/Enthropic-spec/enthropic/main/SPEC.md')
+      .then(r => r.text())
+      .then(text => {
+        const m = text.match(/^# Enthropic Specification (v[\d.]+)/m);
+        if (m) document.getElementById('version').textContent = 'spec ' + m[1];
+      })
+      .catch(() => {});
+  </script>
+
+</body>
+</html>
