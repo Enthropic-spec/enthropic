@@ -1,6 +1,6 @@
 # Contributing
 
-The Enthropic specification is in early development. The format works, but semantic precision and completeness still need serious work. Criticism is as valuable as code — both are welcome.
+The SpeQ specification is in early development. The format works, but semantic precision and completeness still need serious work. Criticism is as valuable as code — both are welcome.
 
 ## What to contribute
 
@@ -10,7 +10,7 @@ The Enthropic specification is in early development. The format works, but seman
 
 **Grammar corrections** — the EBNF is wrong or incomplete. Open a PR with the fix.
 
-**Examples** — a new `.enth` example for a domain not yet covered. Keep it minimal and correct.
+**Examples** — a new `.speq` example for a domain not yet covered. Keep it minimal and correct.
 
 **Validation rules** — a case that should be a hard error but is not caught.
 
@@ -24,8 +24,8 @@ The Enthropic specification is in early development. The format works, but seman
 
 ## What the spec is not
 
-The spec defines a format. It does not dictate how tools implement it. Tools may extend behavior as long as they accept all valid `.enth` files.
+The spec defines a format. It does not dictate how tools implement it. Tools may extend behavior as long as they accept all valid `.speq` files.
 
 ## Questions
 
-Open a [Discussion](https://github.com/enthropic-spec/enthropic/discussions).
+Open a [Discussion](https://github.com/speq-ai/speq/discussions).

@@ -1,8 +1,8 @@
-# Enthropic Specification v0.2
+# SpeQ Specification v0.2
 
 ## 1. Purpose
 
-A `.enth` file is the complete architectural contract of a software project. It is read by an AI agent before generating any code. It defines what exists, what is true, and what is forbidden.
+A `.speq` file is the complete architectural contract of a software project. It is read by an AI agent before generating any code. It defines what exists, what is true, and what is forbidden.
 
 An agent must treat the spec as a closed world. Anything not declared does not exist. Anything declared is binding.
 
@@ -18,7 +18,7 @@ An agent must treat the spec as a closed world. Anything not declared does not e
 
 **Formal and unambiguous.** Purpose-built DSL. No natural language constructs are used as load-bearing syntax. No inference is permitted where a rule exists.
 
-**Immutability.** The spec is read-only for any agent. An agent must not create, edit, or delete a `.enth` file unless the user explicitly requests it in that session. Modifying the spec to reconcile it with generated code is an unconditional security violation.
+**Immutability.** The spec is read-only for any agent. An agent must not create, edit, or delete a `.speq` file unless the user explicitly requests it in that session. Modifying the spec to reconcile it with generated code is an unconditional security violation.
 
 ---
 
@@ -45,7 +45,7 @@ These are not optional extensions. They are part of the core grammar.
 
 ## 4. Format
 
-- **Extension:** `.enth`
+- **Extension:** `.speq`
 - **Encoding:** UTF-8
 - **Comments:** `#` to end of line, ignored by parser
 - **Keywords:** `UPPERCASE`
@@ -168,7 +168,7 @@ INDENT              = "  "
 
 ### VERSION
 
-Must be the first non-comment, non-blank statement in every `.enth` file.
+Must be the first non-comment, non-blank statement in every `.speq` file.
 
 ```
 VERSION 0.2.0
@@ -328,10 +328,10 @@ Valid entry keywords:
 
 | File                 | Purpose                                            | Committed |
 |----------------------|----------------------------------------------------|-----------|
-| `[name].enth`        | The spec. Single source of truth.                  | Yes       |
-| `state_[name].enth`  | Build progress per entity, flow, and layer.        | No        |
+| `[name].speq`        | The spec. Single source of truth.                  | Yes       |
+| `state_[name].speq`  | Build progress per entity, flow, and layer.        | No        |
 
-### state_[name].enth
+### state_[name].speq
 
 Generated from the spec. Tracks build progress. Generated automatically by the tool on first `check`.
 
@@ -362,7 +362,7 @@ STATE [name]
 
 ## 8. Validation Rules
 
-A conforming `.enth` file must satisfy all of the following. A file that fails any rule is rejected.
+A conforming `.speq` file must satisfy all of the following. A file that fails any rule is rejected.
 
 1. `VERSION` is the first non-comment, non-blank statement.
 2. `ENTITY` must appear before any block references an entity identifier.
@@ -387,7 +387,7 @@ A conforming `.enth` file must satisfy all of the following. A file that fails a
 
 ## 9. Scope
 
-Enthropic is domain-agnostic and scale-free. The grammar is identical for a web service, a desktop application, a realtime controller, or a mobile client. Domain vocabulary and entity names are defined per-project. The primitives and grammar do not change.
+SpeQ is domain-agnostic and scale-free. The grammar is identical for a web service, a desktop application, a realtime controller, or a mobile client. Domain vocabulary and entity names are defined per-project. The primitives and grammar do not change.
 
 An agent's semantic understanding of domain terminology comes from training. The spec does not define term semantics. It declares scope, enforces naming, and constrains behavior.
 

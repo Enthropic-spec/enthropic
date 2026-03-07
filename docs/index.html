@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Enthropic</title>
+  <title>SpeQ</title>
   <meta name="description" content="Eliminates entropy in AI-generated code. Same spec, any agent, any session: identical architecture.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -203,12 +203,12 @@
 </head>
 <body>
 
-  <pre class="ascii">              __  __                     _
-  ___  ____  / /_/ /_  _________  ____  (_)____
- / _ \/ __ \/ __/ __ \/ ___/ __ \/ __ \/ / ___/
-/  __/ / / / /_/ / / / /  / /_/ / /_/ / / /__
-\___/_/ /_/\__/_/ /_/_/   \____/ .___/_/\___/
-                              /_/</pre>
+  <pre class="ascii">   _____            ____
+  / ___/____  ___  / __ \
+  \__ \/ __ \/ _ \/ / / /
+ ___/ / /_/ /  __/ /_/ /
+/____/ .___/\___/\___\_\
+    /_/</pre>
 
   <div class="version" id="version"></div>
 
@@ -225,17 +225,17 @@
   </ul>
 
   <div class="buttons">
-    <a href="https://github.com/Enthropic-spec/enthropic/blob/main/SPEC.md" class="btn btn-spec">read the spec</a>
-    <a href="https://github.com/Enthropic-spec/enthropic-tools" class="btn btn-tool">cli tool</a>
+    <a href="https://github.com/speq-ai/speq/blob/main/SPEC.md" class="btn btn-spec">read the spec</a>
+    <a href="https://github.com/speq-ai/speq-tools" class="btn btn-tool">cli tool</a>
   </div>
 
   <details class="accordion">
     <summary>how to use it</summary>
     <div class="accordion-body">
       <ol>
-        <li>Describe your project in a <code>.enth</code> file — entities, layers, rules.</li>
-        <li>Run <code>enthropic check</code> to validate it.</li>
-        <li>Run <code>enthropic context</code> to generate a context block.</li>
+        <li>Describe your project in a <code>.speq</code> file — entities, layers, rules.</li>
+        <li>Run <code>speq check</code> to validate it.</li>
+        <li>Run <code>speq context</code> to generate a context block.</li>
         <li>Paste it as system prompt before every AI session.</li>
         <li>The AI works within your architecture — nothing more, nothing less.</li>
       </ol>
@@ -243,15 +243,15 @@
   </details>
 
   <footer>
-    <a href="https://github.com/Enthropic-spec" target="_blank">Enthropic-spec</a>
-    <a href="https://github.com/Enthropic-spec/enthropic/blob/main/LICENSE" target="_blank">MIT</a>
+    <a href="https://github.com/speq-ai" target="_blank">speq-ai</a>
+    <a href="https://github.com/speq-ai/speq/blob/main/LICENSE" target="_blank">MIT</a>
   </footer>
 
   <script>
-    fetch('https://raw.githubusercontent.com/Enthropic-spec/enthropic/main/SPEC.md')
+    fetch('https://raw.githubusercontent.com/speq-ai/speq/main/SPEC.md')
       .then(r => r.text())
       .then(text => {
-        const m = text.match(/^# Enthropic Specification (v[\d.]+)/m);
+        const m = text.match(/^# SpeQ Specification (v[\d.]+)/m);
         if (m) document.getElementById('version').textContent = 'spec ' + m[1];
       })
       .catch(() => {});

@@ -2,11 +2,11 @@
 
 ## Scope
 
-The Enthropic specification itself (`.enth` format) does not handle secrets, keys, or sensitive data.
+The SpeQ specification itself (`.speq` format) does not handle secrets, keys, or sensitive data.
 The spec only declares *names* of secrets — never values.
 
 Security concerns about **tooling** (CLI, parsers) should be reported to:
-[https://github.com/enthropic-spec/enthropic-tools/security/advisories/new](https://github.com/enthropic-spec/enthropic-tools/security/advisories/new)
+[https://github.com/speq-ai/speq-tools/security/advisories/new](https://github.com/speq-ai/speq-tools/security/advisories/new)
 
 ## Spec-Level Security Concerns
 
