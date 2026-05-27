@@ -5,7 +5,7 @@
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-lightgrey.svg" alt="MIT"/></a>
   &nbsp;
-  <a href="SPEC.md"><img src="https://img.shields.io/badge/spec-v0.2-ffafff?style=flat&labelColor=0f0f1a" alt="Spec v0.2"/></a>
+  <a href="SPEC.md"><img src="https://img.shields.io/badge/spec-v0.3-ffafff?style=flat&labelColor=0f0f1a" alt="Spec v0.3"/></a>
 </p>
 
 ---

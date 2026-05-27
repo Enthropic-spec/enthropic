@@ -1,4 +1,4 @@
-VERSION 0.2.0
+VERSION 0.3.0
 
 PROJECT
   NAME   "shop"
@@ -78,6 +78,12 @@ CONTRACTS
   inventory.stock       NEVER     negative
   order.total           ALWAYS    matches-cart-snapshot
 
+  order.checkout        AUDIT     actor, timestamp, target, outcome
+  payment.charge        AUDIT     actor, timestamp, action, target, outcome, payload-hash
+  payment.confirm       AUDIT     actor, timestamp, target, outcome
+  payment.fail          AUDIT     actor, timestamp, target, outcome
+  admin.*               AUDIT     actor, timestamp, action, target, outcome, signature
+
   FLOW checkout
     1.  [BACKEND] cart.validate
     2.  [BACKEND] order.create
@@ -112,6 +118,23 @@ OBSERVABILITY
     must-not-log:  password, session_token
     metrics:       latency_p99, failure_rate
 
+TESTING
+  flow checkout
+    coverage:    95%
+    categories:  positive, negative, boundary, security, rollback, idempotency, performance
+    performance: p99:3s, throughput:50rps
+    fixtures:    valid_cart, expired_session, declined_card, out_of_stock_product
+
+  flow login
+    coverage:    100%
+    categories:  positive, negative, boundary, security, rollback, performance
+    performance: p99:500ms
+    fixtures:    valid_user, locked_account, wrong_password
+
 CHANGELOG
+  0.3.0
+    ADDED AUDIT contracts on order.checkout, payment.charge, payment.confirm, payment.fail, admin.*
+    ADDED TESTING contracts for checkout and login flows
+
   0.2.0
     ADDED initial spec
