@@ -1,4 +1,4 @@
-# SpeQ Specification v0.2
+# SpeQ Specification v0.3
 
 ## 1. Purpose
 
@@ -38,6 +38,7 @@ Four first-class constructs are derived from these primitives:
 | VOCABULARY | CONTEXT            | Canonical naming registry                      |
 | LAYERS     | CONTEXT+CONTRACTS  | Organizational boundaries and responsibility   |
 | FLOWS      | CONTRACTS          | Ordered critical sequences with rollback       |
+| TESTING    | CONTRACTS          | Per-flow coverage thresholds and required categories |
 
 These are not optional extensions. They are part of the core grammar.
 
@@ -73,6 +74,7 @@ statement           = comment
                     | contracts_block
                     | classify_block
                     | observability_block
+                    | testing_block
                     | changelog_block
 
 comment             = "#" <any characters to end of line> NEWLINE
@@ -125,8 +127,14 @@ subject             = identifier ("." (identifier | "*"))*
 constraint          = "ALWAYS" qualifier
                     | "NEVER" qualifier
                     | "REQUIRES" condition
+                    | "AUDIT" audit_field_list
 qualifier           = word+
 condition           = word (("-" | "_") word)*
+audit_field_list    = audit_field ("," audit_field)*
+audit_field         = audit_meta | audit_path
+audit_meta          = "actor" | "timestamp" | "action" | "outcome"
+                    | "target" | "payload-hash" | "signature"
+audit_path          = identifier ("." identifier)*
 
 flow_block          = INDENT "FLOW" identifier NEWLINE flow_content+
 flow_content        = flow_step | flow_meta
@@ -141,6 +149,23 @@ observability_block = "OBSERVABILITY" NEWLINE obs_entry+
 obs_entry           = INDENT "flow" identifier NEWLINE obs_stmt+
 obs_stmt            = INDENT INDENT obs_key ":" value NEWLINE
 obs_key             = "level" | "must-log" | "must-not-log" | "metrics"
+
+(* Testing *)
+
+testing_block       = "TESTING" NEWLINE test_entry+
+test_entry          = INDENT "flow" identifier NEWLINE test_stmt+
+test_stmt           = INDENT INDENT test_key ":" test_value NEWLINE
+test_key            = "coverage" | "categories" | "performance" | "fixtures"
+test_value          = coverage_pct | category_list | perf_list | fixture_list
+coverage_pct        = digit+ "%"
+category_list       = category ("," category)*
+category            = "positive" | "negative" | "boundary"
+                    | "security" | "fuzzing" | "performance"
+                    | "concurrency" | "rollback" | "idempotency"
+perf_list           = perf_assertion ("," perf_assertion)*
+perf_assertion      = perf_key ":" word
+perf_key            = "p50" | "p95" | "p99" | "throughput" | "concurrency"
+fixture_list        = identifier ("," identifier)*
 
 (* Changelog *)
 
@@ -274,6 +299,35 @@ Declares behavioral invariants. Each rule applies a constraint to a subject. A v
 | ALWAYS   | This condition must hold at all times.                                |
 | NEVER    | This state must never occur.                                          |
 | REQUIRES | This precondition must be satisfied before the operation proceeds.    |
+| AUDIT    | This operation must emit a non-repudiation audit record.              |
+
+---
+
+### AUDIT
+
+`AUDIT` declares a non-repudiation contract: the subject operation must emit an immutable, tamper-evident audit record. Use it for security-critical operations — financial transfers, privilege changes, administrative actions, identity events, configuration changes.
+
+Form: `subject AUDIT field_list`
+
+Each entry in `field_list` is either a reserved meta-field or an entity field. Reserved meta-fields:
+
+| Field          | Meaning                                                          |
+|----------------|------------------------------------------------------------------|
+| `actor`        | Identity that initiated the operation.                           |
+| `timestamp`    | Wall-clock time of the operation.                                |
+| `action`       | Operation attempted.                                             |
+| `outcome`      | Result of the operation: `success` or `failure`.                 |
+| `target`       | Subject of the operation, when distinct from `action`.           |
+| `payload-hash` | Cryptographic digest of the request payload.                     |
+| `signature`    | Cryptographic signature binding the record to its actor.         |
+
+Semantics:
+
+- An audit record must be emitted for every occurrence of the subject operation, including failures and rollbacks.
+- Records must be persisted to an append-only, tamper-evident store. Cryptographic chaining (hash-linked records) or per-record signing is required.
+- Records must not be discarded under any condition — timeout, rollback, error, or shutdown. The audit trail is the only authoritative history.
+- A field classified `credential` in CLASSIFY must never appear in an AUDIT field list. The validator rejects this.
+- AUDIT records are distinct from OBSERVABILITY logs. They have separate stores, separate retention, and separate access controls. An OBSERVABILITY `must-log` declaration does not satisfy an AUDIT contract.
 
 ---
 
@@ -309,6 +363,42 @@ A field classified `credential` in CLASSIFY is `must-not-log` in all flows, whet
 
 ---
 
+### TESTING
+
+Declares per-flow testing contracts: minimum coverage, required test categories, performance assertions, and required fixtures. Same enforcement as CONTRACTS — a flow that does not satisfy its TESTING contract cannot reach `BUILT` in the state file.
+
+| Key           | Meaning                                                                       |
+|---------------|-------------------------------------------------------------------------------|
+| `coverage`    | Minimum coverage percentage on the flow's code paths. Form: `N%`.             |
+| `categories`  | Required test categories. Every listed category must contribute ≥1 test.      |
+| `performance` | Performance assertions verified in load tests (e.g. `p99:200ms, throughput:100rps`). |
+| `fixtures`    | Required fixtures that must exist before the flow's tests run.                |
+
+Reserved test categories:
+
+| Category      | Verifies                                                              |
+|---------------|-----------------------------------------------------------------------|
+| `positive`    | Happy path: declared FLOW steps execute and succeed.                  |
+| `negative`    | Error paths: invalid input, rejected requests, expected failures.     |
+| `boundary`    | Edge cases: empty input, max sizes, off-by-one, time-zone shifts.     |
+| `security`    | Adversarial inputs targeting CONTRACTS: auth bypass, injection, IDOR. |
+| `fuzzing`     | Randomized adversarial inputs.                                        |
+| `performance` | Latency, throughput, and concurrency limits under load.               |
+| `concurrency` | Race conditions, deadlocks, and lock contention.                      |
+| `rollback`    | ROLLBACK steps execute correctly when an ATOMIC flow fails mid-sequence. |
+| `idempotency` | Retries do not duplicate effects.                                     |
+
+Cross-cutting requirements:
+
+- A FLOW with `ATOMIC true` and a `ROLLBACK` declaration must include `rollback` in its `categories`.
+- A FLOW that declares a `RETRY` value must include `idempotency` in its `categories`.
+- A FLOW that declares a `TIMEOUT` value must include `performance` in its `categories`, and the load test must assert completion within that timeout.
+- A FLOW originating at a layer with `BOUNDARY external` must include `security` in its `categories`.
+
+`performance` assertion keys: `p50`, `p95`, `p99` for latency; `throughput` for requests per unit time; `concurrency` for parallel-request limits.
+
+---
+
 ### CHANGELOG
 
 Records the evolution of this spec file. The full changelog is included in AI context blocks so an agent knows what changed between versions and can reason about migrations correctly.
@@ -335,28 +425,39 @@ Valid entry keywords:
 
 Generated from the spec. Tracks build progress. Generated automatically by the tool on first `check`.
 
-Status values for CHECKS: `UNVERIFIED`, `OK`, `FAILED`.
+Status values for CHECKS, TESTS, and AUDIT: `UNVERIFIED`, `OK`, `FAILED`.
 Status values for entities, flows, and layers: `PENDING`, `PARTIAL`, `BUILT`.
 
-All CHECKS must reach `OK` before any entity may be marked `BUILT`.
+All `CHECKS` entries must reach `OK` before any entity may be marked `BUILT`. A flow's `TESTS` entries must all be `OK` before the flow may be marked `BUILT`. An entity referenced by an `AUDIT` contract may not be marked `BUILT` until its `AUDIT` entry is `OK`.
 
 ```
 STATE [name]
 
   CHECKS
-    [lang]        UNVERIFIED
-    [dep.system]  UNVERIFIED
-    [dep.runtime] UNVERIFIED
+    [lang]              UNVERIFIED
+    [dep.system]        UNVERIFIED
+    [dep.runtime]       UNVERIFIED
 
   ENTITY
-    [entity]      PENDING
+    [entity]            PENDING
 
   FLOWS
-    [flow]        PENDING
+    [flow]              PENDING
 
   LAYERS
-    [layer]       PENDING
+    [layer]             PENDING
+
+  TESTS
+    [flow].coverage     UNVERIFIED
+    [flow].[category]   UNVERIFIED
+    [flow].performance  UNVERIFIED
+    [flow].fixtures     UNVERIFIED
+
+  AUDIT
+    [subject]           UNVERIFIED
 ```
+
+A `TESTS` row is emitted for `coverage`, each declared `categories` entry, `performance` (if declared), and `fixtures` (if declared). An `AUDIT` row is emitted for every `AUDIT` contract subject in the spec.
 
 ---
 
@@ -382,6 +483,14 @@ A conforming `.speq` file must satisfy all of the following. A file that fails a
 16. `CLASSIFY` subjects must match declared entities. The class must be one of `credential`, `pii`, `sensitive`, `internal`.
 17. A field classified `credential` must not appear in `must-log` in any `OBSERVABILITY` entry.
 18. `FLOW` steps that declare `[LAYER_NAME]` must reference a layer declared in `LAYERS`.
+19. Every `AUDIT` contract subject is a declared entity or uses the `*` wildcard.
+20. A field classified `credential` in `CLASSIFY` must not appear in any `AUDIT` field list.
+21. Every flow referenced in `TESTING` is declared in a `FLOW` block.
+22. `TESTING` `coverage` is an integer percentage between 0 and 100, written `N%`.
+23. `TESTING` `categories` contains only reserved category identifiers.
+24. A `FLOW` with `ATOMIC true` and `ROLLBACK` must include `rollback` in its `TESTING` `categories`.
+25. A `FLOW` with a declared `RETRY` value must include `idempotency` in its `TESTING` `categories`.
+26. A `FLOW` originating at a layer with `BOUNDARY external` must include `security` in its `TESTING` `categories`.
 
 ---
 
@@ -392,12 +501,3 @@ SpeQ is domain-agnostic and scale-free. The grammar is identical for a web servi
 An agent's semantic understanding of domain terminology comes from training. The spec does not define term semantics. It declares scope, enforces naming, and constrains behavior.
 
 Conforming example specs are in `/examples`.
-
----
-
-## Roadmap
-
-Deferred:
-
-- `AUDIT` keyword in CONTRACTS: non-repudiation contracts for security-critical operations.
-- `TESTING` block: per-flow coverage requirements and required test categories.
