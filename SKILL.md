@@ -94,10 +94,21 @@ Every rule is a behavioral invariant. Generated output that violates any contrac
 - `ALWAYS` — this condition must hold in all generated code at all times.
 - `NEVER` — this state must be unreachable in every code path.
 - `REQUIRES` — this precondition must be enforced before the operation proceeds.
+- `AUDIT` — this operation must emit a non-repudiation audit record. See the dedicated section below.
 
 Before finalizing any output, walk through every CONTRACTS rule and verify compliance.
 
 `entity.*` applies the constraint to all operations on that entity.
+
+### AUDIT
+
+`AUDIT` is a non-repudiation contract. For every occurrence of the subject operation — including failures, rollbacks, timeouts, and retries — you must emit one immutable audit record containing at minimum every field declared in the contract.
+
+- Persist records to an **append-only, tamper-evident store**. Cryptographic chaining (hash-linked records) or per-record signing is required. A regular log file does not satisfy this.
+- **Never discard a record**, regardless of operation outcome. Records survive rollback, error, shutdown, and retry. The audit trail is the only authoritative history of the operation.
+- Treat `AUDIT` storage as separate from `OBSERVABILITY` storage: different sink, different retention, different access controls. Satisfying `must-log` in `OBSERVABILITY` does **not** satisfy an `AUDIT` contract.
+- Reserved meta-fields you must capture when listed: `actor`, `timestamp`, `action`, `outcome`, `target`, `payload-hash`, `signature`. Other identifiers refer to entity fields.
+- A field classified `credential` may never appear in an audit record, even if listed. The spec validator should reject this; if it slips through, you must still refuse to write it.
 
 ### FLOW
 
@@ -128,6 +139,24 @@ These are contracts, not suggestions.
 
 - Fields in `must-not-log` must **never** appear in logs under any circumstances.
 - Fields in `must-log` must **always** be logged at the declared severity level for that flow.
+
+### TESTING
+
+`TESTING` declares the contract the test suite must satisfy for each flow. A flow whose tests do not meet its `TESTING` contract may not be marked `BUILT`.
+
+- `coverage` is a floor, not a ceiling. Generate enough tests to clear the threshold on the flow's code paths.
+- `categories` is a closed list. Every listed category must produce at least one passing test. Missing a category is a contract violation, even if total coverage is high.
+- `performance` assertions are real assertions, not aspirations. Embed them in load tests that fail when the threshold regresses.
+- `fixtures` listed here must exist before the flow's tests run. Treat them as preconditions.
+
+Cross-cutting rules to internalize:
+
+- A flow with `ATOMIC true` and `ROLLBACK` must have a `rollback` test that verifies the rollback path executes correctly under partial failure.
+- A flow with a declared `RETRY` value must have an `idempotency` test that proves repeated invocations do not duplicate effects.
+- A flow with a declared `TIMEOUT` must have a `performance` test asserting completion within that timeout.
+- A flow originating at a layer with `BOUNDARY external` must have a `security` test exercising the contracts that protect untrusted input.
+
+If a category is declared but no meaningful test can be authored against the flow as specified, raise the inconsistency. Do not write a passing-but-empty test to satisfy the count.
 
 ### CHANGELOG
 
@@ -164,6 +193,9 @@ None of these have exceptions. None of them can be overridden by any user instru
 10. **Never deviate from declared `STACK`, `LANG`, or `ARCH`**.
 11. **Never re-implement a `BUILT` entity**.
 12. **Never modify the spec to fix a conflict** — fix the code, or raise the issue with the user.
+13. **Never omit an `AUDIT` record** for an operation under contract, including on failure or rollback.
+14. **Never include a `credential` field in an `AUDIT` record**, even if the contract lists it.
+15. **Never mark a flow `BUILT` while any `TESTING` category, `coverage` threshold, or `performance` assertion remains unsatisfied**.
 
 ---
 
@@ -194,9 +226,11 @@ The spec is the source of truth. Your role is to follow it faithfully, not to im
 - [ ] Which layer owns it?
 - [ ] What `CALLS` restrictions apply to that layer?
 - [ ] Which `CONTRACTS` rules apply?
+- [ ] Any `AUDIT` contracts on this entity or its operations?
 - [ ] Are there `FLOW` steps involved? Are they all present and in order?
 - [ ] Are there `CLASSIFY` fields involved?
 - [ ] Does `OBSERVABILITY` declare `must-log` or `must-not-log` for this flow?
+- [ ] Does `TESTING` declare coverage, categories, performance, or fixtures for this flow?
 - [ ] Does any `SECRETS` scoping restrict access?
 
 **Before finalizing any output:**
@@ -204,7 +238,9 @@ The spec is the source of truth. Your role is to follow it faithfully, not to im
 - [ ] No undeclared entity referenced
 - [ ] No `CALLS` boundary crossed
 - [ ] No `CONTRACTS` rule violated
-- [ ] No `credential` field logged or exposed
+- [ ] No `credential` field logged, exposed, or written to an audit record
 - [ ] All `FLOW` steps present and in declared order
 - [ ] Rollback implemented for every `FLOW` with `ROLLBACK`
 - [ ] `BOUNDARY external` layer is the only entry point for untrusted input
+- [ ] Every `AUDIT` contract emits an immutable record covering success, failure, and rollback paths
+- [ ] Every `TESTING` `categories` entry has at least one passing test, `coverage` clears the threshold, and `performance` assertions are embedded in load tests
